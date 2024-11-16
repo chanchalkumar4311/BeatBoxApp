@@ -3,6 +3,7 @@ package com.app;
 import javax.sound.midi.*;
 import javax.swing.*;
 import java.awt.*;
+import java.io.*;
 import java.util.ArrayList;
 import static javax.sound.midi.ShortMessage.*;
 public class BeatBox {
@@ -44,7 +45,12 @@ public class BeatBox {
 		JButton downTempo = new JButton("Tempo Down");
 		downTempo.addActionListener(e -> changeTempo(0.97f));
 		buttonBox.add(downTempo);
-		
+		JButton searlizeIt = new JButton("searlizeIt");
+		searlizeIt.addActionListener(e -> writeToFile());
+		buttonBox.add(searlizeIt);
+		JButton restore = new JButton("Restore");
+		restore.addActionListener(e -> readFile());
+		buttonBox.add(restore);
 		Box nameBox = new Box(BoxLayout.Y_AXIS);
 		for (String instrumentName : instrumentNames) {
 			JLabel instrumentLabel = new JLabel(instrumentName);
@@ -76,6 +82,40 @@ public class BeatBox {
 		frame.setVisible(true);
 	}
 	
+	private void readFile() {
+		System.out.println("Reading from the file...!");
+		boolean[] checkboxState = null;
+		try (ObjectInputStream is =
+				new ObjectInputStream(new FileInputStream(FilePathUtil.PATH_NAME+"Checkbox.ser"))) {
+			checkboxState = (boolean[]) is.readObject();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		for (int i = 0; i < 256; i++) {
+			JCheckBox check = checkboxList.get(i);
+			check.setSelected(checkboxState[i]);
+		}
+		sequencer.stop();
+		buildTrackAndStart();
+	}
+
+	private void writeToFile() {
+		System.out.println("Writing to the file...!");
+		boolean[] checkboxState = new boolean[256];
+		for (int i = 0; i < 256; i++) {
+			JCheckBox check = checkboxList.get(i);
+			if (check.isSelected()) {
+				checkboxState[i] = true;
+			}
+		}
+		try (ObjectOutputStream os =
+				new ObjectOutputStream(new FileOutputStream(FilePathUtil.PATH_NAME+"Checkbox.ser"))) {
+			os.writeObject(checkboxState);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
 	private void setUpMidi() {
 		try {
 			sequencer = MidiSystem.getSequencer();
